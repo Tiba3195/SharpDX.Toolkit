@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using SharpDX.Mathematics;
 using System;
 using System.Globalization;
 using SharpDX.Toolkit;
@@ -104,7 +105,7 @@ namespace SharpDX
         }
 
         /// <summary>
-        /// Performs an explicit conversion from <see cref="SharpDX.CompositeTransform"/> to <see cref="Matrix"/>.
+        /// Performs an explicit conversion from <see cref="SharpDX.CompositeTransform"/> to <see cref="SlimDX.Matrix"/>.
         /// </summary>
         /// <param name="value">The value.</param>
         /// <returns>The result of the conversion.</returns>

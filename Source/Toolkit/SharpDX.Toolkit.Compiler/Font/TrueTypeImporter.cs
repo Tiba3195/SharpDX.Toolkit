@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
+using SharpDX.Mathematics;
 using Factory = SharpDX.DirectWrite.Factory;
 
 namespace SharpDX.Toolkit.Graphics

@@ -20,7 +20,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
@@ -49,7 +49,7 @@ namespace SharpDX.Toolkit
 
         private bool deviceSettingsChanged;
 
-        private FeatureLevel preferredGraphicsProfile;
+        //private FeatureLevel preferredGraphicsProfile;
 
         private bool isFullScreen;
 
@@ -475,13 +475,11 @@ namespace SharpDX.Toolkit
 
                     break;
                 default:
-                    // NOTE SmartK8: Next best thing
-#if WIN8METRO
-                    Task.Delay(TimeSpan.FromMilliseconds(20)).Wait();
+#if !WINDOWS_UWP
+                    System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(20));
 #else
-                    Thread.Sleep(TimeSpan.FromMilliseconds(20));
-#endif     
-
+                    new System.Threading.ManualResetEvent(false).WaitOne(TimeSpan.FromMilliseconds(20));
+#endif
                     try
                     {
                         OnDeviceLost(this, EventArgs.Empty);

@@ -21,8 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using SharpDX.Direct3D11;
 using SharpDX.Mathematics;
@@ -286,13 +284,12 @@ namespace SharpDX.Toolkit.Graphics
                 // ----------------------------------------------
                 RawSlotLinkSet localLink = stageBlock.ShaderResourceViewSlotLinks;
                 SlotLink* pLinks = localLink.Links;
-
                 for (int i = 0; i < localLink.Count; i++)
                 {
-                    shaderStage.SetShaderResourcesIntPtr(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers);
+                    shaderStage.SetShaderResources(pLinks->SlotIndex, pLinks->SlotCount, new ShaderResourceView[pLinks->SlotCount]);
                     pLinks++;
                 }
-
+#if UNIMPLEMENTED
                 // ----------------------------------------------
                 // Reset UnorderedAccessView
                 // ----------------------------------------------
@@ -303,7 +300,7 @@ namespace SharpDX.Toolkit.Graphics
                 {
                     for (int i = 0; i < localLink.Count; i++)
                     {
-                        shaderStage.SetUnorderedAccessViewsIntPtr(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers, pLinks->UavInitialCount);
+                        shaderStage.SetUnorderedAccessViews(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers, pLinks->UavInitialCount);
                         pLinks++;
                     }
                 }
@@ -312,12 +309,11 @@ namespace SharpDX.Toolkit.Graphics
                     // Otherwise, for OutputMergerStage.
                     for (int i = 0; i < localLink.Count; i++)
                     {
-                        // TODO RJELLING: Fix this next line somehow
-                        //mergerStage.SetUnorderedAccessViewsIntPtr(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers, pLinks->UavInitialCount);
+                        mergerStage.SetUnorderedAccessViewsKeepRTV(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers, pLinks->UavInitialCount);
                         pLinks++;
                     }
                 }
-
+#endif
                 if (fullUnApply)
                 {
                     // ----------------------------------------------
@@ -325,10 +321,9 @@ namespace SharpDX.Toolkit.Graphics
                     // ----------------------------------------------
                     localLink = stageBlock.ConstantBufferSlotLinks;
                     pLinks = localLink.Links;
-
                     for (int i = 0; i < localLink.Count; i++)
                     {
-                        shaderStage.SetConstantBuffersIntPtr(pLinks->SlotIndex, pLinks->SlotCount, graphicsDevice.ResetSlotsPointers);
+                        shaderStage.SetConstantBuffers(pLinks->SlotIndex, pLinks->SlotCount, new Direct3D11.Buffer[pLinks->SlotCount]);
                         pLinks++;
                     }
                 }
@@ -360,6 +355,15 @@ namespace SharpDX.Toolkit.Graphics
                     graphicsDevice.SetRasterizerState(null);
                 }
             }
+        }
+
+        private static unsafe T[] IntPtrArrayToT<T>(IntPtr arrayPtr, int count, Func<IntPtr, T> constr)
+        {
+            IntPtr* ptr = (IntPtr*)arrayPtr;
+            var arr = new T[count];
+            for (int i = 0; i < count; ++i)
+                arr[i] = constr(ptr[i]);
+            return arr;
         }
 
         /// <summary>
@@ -466,7 +470,7 @@ namespace SharpDX.Toolkit.Graphics
                     shaderStage.SetShaderResourcesIntPtr(pLinks->SlotIndex, pLinks->SlotCount, pLinks->Pointer);
                     pLinks++;
                 }
-
+#if UNIMPLEMENTED
                 // ----------------------------------------------
                 // Setup UnorderedAccessView
                 // ----------------------------------------------
@@ -477,8 +481,7 @@ namespace SharpDX.Toolkit.Graphics
                 {
                     for (int i = 0; i < localLink.Count; i++)
                     {
-                        // TODO RJELLING: Fix this next line somehow
-                        //mergerStage.SetUnorderedAccessViewsIntPtr(pLinks->SlotIndex, pLinks->SlotCount, pLinks->Pointer, pLinks->UavInitialCount);
+                        shaderStage.SetUnorderedAccessViews(pLinks->SlotIndex, pLinks->SlotCount, pLinks->Pointer, pLinks->UavInitialCount);
                         pLinks++;
                     }
                 }
@@ -487,12 +490,11 @@ namespace SharpDX.Toolkit.Graphics
                     // Otherwise, for OutputMergerStage.
                     for (int i = 0; i < localLink.Count; i++)
                     {
-                        // TODO RJELLING: Fix this next line somehow
-                        //mergerStage.SetUnorderedAccessViewsIntPtr(pLinks->SlotIndex, pLinks->SlotCount, pLinks->Pointer, pLinks->UavInitialCount);
+                        mergerStage.SetUnorderedAccessViewsKeepRTV(pLinks->SlotIndex, pLinks->SlotCount, pLinks->Pointer, pLinks->UavInitialCount);
                         pLinks++;
                     }
                 }
-
+#endif
                 // ----------------------------------------------
                 // Setup SamplerStates
                 // ----------------------------------------------

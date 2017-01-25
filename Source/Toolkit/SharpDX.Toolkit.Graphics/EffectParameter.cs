@@ -251,16 +251,7 @@ namespace SharpDX.Toolkit.Graphics
             return result;
         }
 
-        /// <summary>
-        /// Sets a single value to the associated parameter in the constant buffer.
-        /// </summary>
-        /// <typeparam name = "T">The type of the value to be written to the buffer.</typeparam>
-        /// <param name = "value">The value to write to the buffer.</param>
-        public void SetValue<T>(ref T value) where T : struct
-        {
-            buffer.BackingBuffer.Set(offset, ref value);
-            buffer.IsDirty = true;
-        }
+   
 
         /// <summary>
         /// Sets a single value to the associated parameter in the constant buffer.

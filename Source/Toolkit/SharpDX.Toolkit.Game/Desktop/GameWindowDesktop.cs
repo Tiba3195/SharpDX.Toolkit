@@ -18,7 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if !W8CORE
+using Rectangle = SharpDX.Rectangle;
+#if !W8CORE && !WINDOWS_UWP
 using System;
 using System.Threading;
 using System.Diagnostics;

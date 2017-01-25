@@ -22,9 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using SharpDX;
 using SharpDX.IO;
 using SharpDX.Mathematics;
 using SharpDX.Multimedia;
@@ -292,7 +290,7 @@ namespace SharpDX.Toolkit.Serialization
         /// <typeparam name="T">Type of the element to serialize.</typeparam>
         public void RegisterDynamic<T>() where T : IDataSerializable, new()
         {
-#if W8CORE
+#if W8CORE || WINDOWS_UWP
             var attribute = Utilities.GetCustomAttribute<DynamicSerializerAttribute>(typeof (T).GetTypeInfo());
 #else
             var attribute = Utilities.GetCustomAttribute<DynamicSerializerAttribute>(typeof (T));
@@ -577,31 +575,34 @@ namespace SharpDX.Toolkit.Serialization
             if (!Utilities.IsEnum(typeof(T)))
                 throw new ArgumentException("T generic parameter must be a valid enum", "value");
 
-            var pValue = Native.Fixed(ref value);
-
-            switch (Utilities.SizeOf<T>())
+            Utilities.Pin(ref value, iptr =>
             {
-                case 1:
-                    {
-                        Serialize(ref *(byte*)pValue);
-                        break;
-                    }
-                case 2:
-                    {
-                        Serialize(ref *(short*)pValue);
-                        break;
-                    }
-                case 4:
-                    {
-                        Serialize(ref *(int*)pValue);
-                        break;
-                    }
-                case 8:
-                    {
-                        Serialize(ref *(long*)pValue);
-                        break;
-                    }
-            }
+                var pValue = (void*)iptr;
+
+                switch (Utilities.SizeOf<T>())
+                {
+                    case 1:
+                        {
+                            Serialize(ref *(byte*)pValue);
+                            break;
+                        }
+                    case 2:
+                        {
+                            Serialize(ref *(short*)pValue);
+                            break;
+                        }
+                    case 4:
+                        {
+                            Serialize(ref *(int*)pValue);
+                            break;
+                        }
+                    case 8:
+                        {
+                            Serialize(ref *(long*)pValue);
+                            break;
+                        }
+                }
+            });
         }
 
         /// <summary>
@@ -2733,7 +2734,7 @@ namespace SharpDX.Toolkit.Serialization
                     // Figure out how many chars to process this round.
                     int charCount = (numLeft > maxChars) ? maxChars : numLeft;
                     int byteLen;
-#if W8CORE
+#if W8CORE || WINDOWS_UWP
                     // This is inefficient, but .NET 4.5 Core profile doesn't give us the choice.
                     var charArray = value.ToCharArray();
                     byteLen = encoder.GetBytes(charArray, charStart, charCount, largeByteBuffer, 0, charCount == numLeft);

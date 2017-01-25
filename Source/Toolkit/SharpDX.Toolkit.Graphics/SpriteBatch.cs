@@ -74,7 +74,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -114,6 +113,7 @@ namespace SharpDX.Toolkit.Graphics
         private readonly ResourceContext resourceContext;
         private readonly VertexInputLayout vertexInputLayout;
         private readonly Dictionary<ShaderResourceView, TextureInfo> textureInfos = new Dictionary<ShaderResourceView, TextureInfo>(128);
+        private readonly Dictionary<ShaderResourceView, IntPtr > resourcelookuptable = new Dictionary<ShaderResourceView, IntPtr>(128);
         private readonly Resource tempResource = new Resource(IntPtr.Zero);
         private readonly SharpDX.Direct3D11.Texture1D tempTexture1D = new SharpDX.Direct3D11.Texture1D(IntPtr.Zero);
         private readonly SharpDX.Direct3D11.Texture2D tempTexture2D = new SharpDX.Direct3D11.Texture2D(IntPtr.Zero);
@@ -688,30 +688,41 @@ namespace SharpDX.Toolkit.Graphics
                 }
                 else
                 {
-                    // NOTE SmartK8: Verify functionality
-                    tempResource.NativePointer = shaderResourceView.NativePointer;
+                    //throw new NotImplementedException();
+                    IntPtr temppointer;
 
+                    if (!resourcelookuptable.TryGetValue(shaderResourceView, out temppointer ))
+                    {
+                        temppointer = shaderResourceView.Resource.NativePointer;
+                        resourcelookuptable.Add(shaderResourceView, temppointer);
+
+                    }
+            
+                        tempResource.NativePointer = temppointer;
+                  
+                       
+                   
                     switch (tempResource.Dimension)
                     {
                         case ResourceDimension.Texture1D:
-                            tempTexture1D.NativePointer = shaderResourceView.NativePointer;
+                            tempTexture1D.NativePointer = tempResource.NativePointer;
                             textureInfo.Width = tempTexture1D.Description.Width;
                             textureInfo.Height = 1;
                             break;
                         case ResourceDimension.Texture2D:
-                            tempTexture2D.NativePointer = shaderResourceView.NativePointer;
+                            tempTexture2D.NativePointer = tempResource.NativePointer;
                             var description2D = tempTexture2D.Description;
                             textureInfo.Width = description2D.Width;
                             textureInfo.Height = description2D.Height;
                             break;
                         case ResourceDimension.Texture3D:
-                            tempTexture3D.NativePointer = shaderResourceView.NativePointer;
+                            tempTexture3D.NativePointer = tempResource.NativePointer;
                             var description3D = tempTexture3D.Description;
                             textureInfo.Width = description3D.Width;
                             textureInfo.Height = description3D.Height;
                             break;
                         default:
-                            throw new ArgumentException("Invalid resource for texture. Must be Texture1D/2D/3D", "shaderResourceView");
+                            throw new ArgumentException("Invalid resource for texture. Must be Texture1D/2D/3D", "shaderResourceView" + tempResource.Dimension );
                     }
 
                     // Then calculate the actual width of the view
@@ -721,7 +732,9 @@ namespace SharpDX.Toolkit.Graphics
                     textureInfo.Height = Math.Max(1, textureInfo.Height >> mipIndex);
 
                     // Release the resource retrieved by shaderResourceView.GetResource(out resourcePtr);
-                    Marshal.Release(shaderResourceView.NativePointer);
+                  //  Marshal.Release(shaderResourceView.Resource.NativePointer);
+                   // shaderResourceView.Resource.Dispose();
+                   
                 }
 
                 textureInfos.Add(shaderResourceView, textureInfo);
@@ -790,7 +803,7 @@ namespace SharpDX.Toolkit.Graphics
             }
         }
 
-        private unsafe void DrawBatchPerTexture(ref TextureInfo texture, SpriteInfo[] sprites, int offset, int count)
+        private void DrawBatchPerTexture(ref TextureInfo texture, SpriteInfo[] sprites, int offset, int count)
         {
             var nativeShaderResourceViewPointer = texture.ShaderResourceView;
 
@@ -821,18 +834,21 @@ namespace SharpDX.Toolkit.Graphics
             }
             else
             {
-                // Sets the texture for this sprite effect.
-                // Use an optimized version in order to avoid to reapply the sprite effect here just to change texture
-                // We are calling directly the PixelShaderStage. We assume that the texture is on slot 0 as it is
-                // setup in the original BasicEffect.fx shader.
-                // NOTE SmartK8 : Calls internal method
-                GraphicsDevice.PixelShaderStage.SetShaderResourcesIntPtr(0, 1, new IntPtr(&nativeShaderResourceViewPointer));
+
+                unsafe
+                {
+                    // Sets the texture for this sprite effect.
+                    // Use an optimized version in order to avoid to reapply the sprite effect here just to change texture
+                    // We are calling directly the PixelShaderStage. We assume that the texture is on slot 0 as it is
+                    // setup in the original BasicEffect.fx shader.
+                    GraphicsDevice.PixelShaderStage.SetShaderResourcesIntPtr(0, 1,new IntPtr(&nativeShaderResourceViewPointer));
+                }
 
                 DrawBatchPerTextureAndPass(ref texture, sprites, offset, count);
 
                 // unbind the texture from pass as it can be used later as a render target
-                // NOTE SmartK8 : Calls internal method
-                GraphicsDevice.PixelShaderStage.SetShaderResourcesIntPtr(0, 1, GraphicsDevice.ResetSlotsPointers);
+               GraphicsDevice.PixelShaderStage.SetShaderResourcesIntPtr(0,1, GraphicsDevice.ResetSlotsPointers);
+
             }
         }
 

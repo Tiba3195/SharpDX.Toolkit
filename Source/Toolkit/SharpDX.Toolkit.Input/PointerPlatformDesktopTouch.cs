@@ -18,9 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if !W8CORE
+using SharpDX.Mathematics;
+using RectangleF = SharpDX.RectangleF;
+#if !W8CORE && !WINDOWS_UWP
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 

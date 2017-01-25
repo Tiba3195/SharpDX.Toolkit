@@ -20,8 +20,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using SharpDX.Collections;
+
 using SharpDX.Toolkit.Collections;
 using SharpDX.Toolkit.Content;
 using SharpDX.Toolkit.Graphics;
@@ -431,14 +430,13 @@ namespace SharpDX.Toolkit
             }
 
             // If this instance is not active, sleep for an inactive sleep time
-            if (!IsActive)
+            if (!IsActive && InactiveSleepTime > TimeSpan.Zero)
             {
-                // NOTE SmartK8: Next best thing
-#if WIN8METRO
-                Task.Delay(inactiveSleepTime).Wait();
+#if !WINDOWS_UWP
+                System.Threading.Thread.Sleep(InactiveSleepTime);
 #else
-                Thread.Sleep(inactiveSleepTime);
-#endif     
+                new System.Threading.ManualResetEvent(false).WaitOne(InactiveSleepTime);
+#endif
             }
 
             // Update the timer
@@ -481,17 +479,12 @@ namespace SharpDX.Toolkit
                 {
                     // check if we can sleep the thread to free CPU resources
                     var sleepTime = TargetElapsedTime - accumulatedElapsedGameTime;
-                    if(sleepTime > TimeSpan.Zero)
-                    {
-                        // NOTE SmartK8: Next best thing
-#if WIN8METRO
-                        Task.Delay(sleepTime).Wait();
+                    if (sleepTime > TimeSpan.Zero)
+#if !WINDOWS_UWP
+                        System.Threading.Thread.Sleep(sleepTime);
 #else
-                        Thread.Sleep(sleepTime);
+                        new System.Threading.ManualResetEvent(false).WaitOne(sleepTime);
 #endif
-
-                    }
-
                     return;
                 }
 
@@ -545,9 +538,9 @@ namespace SharpDX.Toolkit
             }
         }
 
-        #endregion
+#endregion
 
-        #region Methods
+#region Methods
 
         /// <summary>
         /// Starts the drawing of a frame. This method is followed by calls to Draw and EndDraw.
@@ -1076,7 +1069,7 @@ namespace SharpDX.Toolkit
             AddGameSystem((IUpdateable)sender, updateableGameSystems, UpdateableSearcher.Default, UpdateableComparison, true);
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// The comparer used to order <see cref="IDrawable"/> objects.
